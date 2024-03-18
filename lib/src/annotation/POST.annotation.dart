@@ -43,23 +43,44 @@ dynamic postHandler(Uri urlUri, Request request, Function postFunction) async {
 /// This is used to annotated a handler method as a Post
 class POST {
   final String url;
+  final List<Middleware>? middlewares;
 
-  const POST({this.url = ''});
+  const POST({
+    this.url = '',
+    this.middlewares,
+  });
 
   Future<Cascade> execute(
       Function postFunction, Cascade router, String baseUrl) async {
     var completeUrl = baseUrl + url;
     Uri urlUri = Uri.parse(completeUrl);
     print('adding post $completeUrl');
-    return router.add((Request request) async {
-      try {
-        return await postHandler(urlUri, request, postFunction);
-      } on PathError catch (_) {
-        print(_);
-        return Response.notFound('not found');
-      } on ParameterError catch (_) {
-        return Response.badRequest(body: 'parameter error');
+    if (middlewares != null && middlewares!.isNotEmpty) {
+      var pipeline = Pipeline();
+      for (var element in middlewares!) {
+        pipeline.addMiddleware(element);
       }
-    });
+      return router.add(pipeline.addHandler((Request request) async {
+        try {
+          return await postHandler(urlUri, request, postFunction);
+        } on PathError catch (_) {
+          print(_);
+          return Response.notFound('not found');
+        } on ParameterError catch (_) {
+          return Response.badRequest(body: 'parameter error');
+        }
+      }));
+    } else {
+      return router.add((Request request) async {
+        try {
+          return await postHandler(urlUri, request, postFunction);
+        } on PathError catch (_) {
+          print(_);
+          return Response.notFound('not found');
+        } on ParameterError catch (_) {
+          return Response.badRequest(body: 'parameter error');
+        }
+      });
+    }
   }
 }

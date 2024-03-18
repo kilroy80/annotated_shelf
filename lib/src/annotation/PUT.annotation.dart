@@ -38,22 +38,42 @@ dynamic putHandler(Uri urlUri, Request request, Function putFunction) async {
 /// This is used to annotated a handler method as a put
 class PUT {
   final String url;
+  final List<Middleware>? middlewares;
 
-  const PUT({this.url = ''});
+  const PUT({
+    this.url = '',
+    this.middlewares,
+  });
 
   Future<Cascade> execute(
       Function putFunction, Cascade router, String baseUrl) async {
     var completeUrl = baseUrl + url;
     Uri urlUri = Uri.parse(completeUrl);
     print('adding put $completeUrl');
-    return router.add((Request request) async {
-      try {
-        return await putHandler(urlUri, request, putFunction);
-      } on PathError catch (_) {
-        return Response.notFound('not found');
-      } on ParameterError catch (_) {
-        return Response.badRequest(body: 'parameter error');
+    if (middlewares != null && middlewares!.isNotEmpty) {
+      var pipeline = Pipeline();
+      for (var element in middlewares!) {
+        pipeline.addMiddleware(element);
       }
-    });
+      return router.add(pipeline.addHandler((Request request) async {
+        try {
+          return await putHandler(urlUri, request, putFunction);
+        } on PathError catch (_) {
+          return Response.notFound('not found');
+        } on ParameterError catch (_) {
+          return Response.badRequest(body: 'parameter error');
+        }
+      }));
+    } else {
+      return router.add((Request request) async {
+        try {
+          return await putHandler(urlUri, request, putFunction);
+        } on PathError catch (_) {
+          return Response.notFound('not found');
+        } on ParameterError catch (_) {
+          return Response.badRequest(body: 'parameter error');
+        }
+      });
+    }
   }
 }

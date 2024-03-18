@@ -26,20 +26,38 @@ dynamic deleteHandler(
 /// This is used to annotated a handler method as a Delete
 class DELETE {
   final String url;
+  final List<Middleware>? middlewares;
 
-  const DELETE({this.url = ''});
+  const DELETE({
+    this.url = '',
+    this.middlewares,
+  });
 
   Future<Cascade> execute(
       Function deleteFunction, Cascade router, String baseUrl) async {
     var completeUrl = baseUrl + url;
     Uri urlUri = Uri.parse(completeUrl);
     print('adding delete $completeUrl');
-    return router.add((Request request) async {
-      try {
-        return await deleteHandler(urlUri, request, deleteFunction);
-      } on PathError catch (_) {
-        return Response.notFound('not found');
+    if (middlewares != null && middlewares!.isNotEmpty) {
+      var pipeline = Pipeline();
+      for (var element in middlewares!) {
+        pipeline.addMiddleware(element);
       }
-    });
+      return router.add(pipeline.addHandler((Request request) async {
+        try {
+          return await deleteHandler(urlUri, request, deleteFunction);
+        } on PathError catch (_) {
+          return Response.notFound('not found');
+        }
+      }));
+    } else {
+      return router.add((Request request) async {
+        try {
+          return await deleteHandler(urlUri, request, deleteFunction);
+        } on PathError catch (_) {
+          return Response.notFound('not found');
+        }
+      });
+    }
   }
 }
