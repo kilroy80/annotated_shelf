@@ -38,22 +38,18 @@ dynamic putHandler(Uri urlUri, Request request, Function putFunction) async {
 /// This is used to annotated a handler method as a put
 class PUT {
   final String url;
-  final List<Middleware>? middlewares;
 
-  const PUT({
-    this.url = '',
-    this.middlewares,
-  });
+  const PUT({this.url = ''});
 
   Future<Cascade> execute(
-      Function putFunction, Cascade router, String baseUrl) async {
+      Function putFunction, Cascade router, String baseUrl, List<Middleware>? middlewares) async {
     var completeUrl = baseUrl + url;
     Uri urlUri = Uri.parse(completeUrl);
     print('adding put $completeUrl');
-    if (middlewares != null && middlewares!.isNotEmpty) {
+    if (middlewares != null && middlewares.isNotEmpty) {
       var pipeline = Pipeline();
-      for (var element in middlewares!) {
-        pipeline.addMiddleware(element);
+      for (var element in middlewares) {
+        pipeline = pipeline.addMiddleware(element);
       }
       return router.add(pipeline.addHandler((Request request) async {
         try {

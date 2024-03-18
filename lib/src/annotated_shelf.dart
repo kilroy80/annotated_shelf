@@ -7,7 +7,7 @@ import 'errors/base.error.dart';
 import 'core.dart';
 
 Future<Cascade> addExecute(
-    Cascade router, function, rootMember, ref, baseUrl) async {
+    Cascade router, function, rootMember, ref, baseUrl, middlewares) async {
   router = await function.reflectee.execute(
       (Map<String, dynamic> mapedParameters) async {
     try {
@@ -19,7 +19,7 @@ Future<Cascade> addExecute(
     } on BaseError catch (e) {
       return e.getResponse();
     }
-  }, router, baseUrl);
+  }, router, baseUrl, middlewares);
   return router;
 }
 
@@ -28,23 +28,24 @@ Future<Cascade> handleProperties(
     Cascade router,
     MethodMirror rootMember,
     InstanceMirror ref,
-    String baseUrl) async {
+    String baseUrl,
+    List<Middleware>? middlewares) async {
   for (var function in propertyData) {
     var completeUrl = baseUrl + function.reflectee.url;
     if (hasSameParams(completeUrl, rootMember.parameters)) {
-      router = await addExecute(router, function, rootMember, ref, baseUrl);
+      router = await addExecute(router, function, rootMember, ref, baseUrl, middlewares);
     }
   }
   return router;
 }
 
 Future<Cascade> mountURLMethod(MethodMirror rootMember, InstanceMirror ref,
-    Cascade router, String baseUrl) async {
+    Cascade router, String baseUrl, List<Middleware>? middlewares) async {
   var propertyData =
       rootMember.metadata.where((element) => isAnnotatedShelfMethod(element));
   if (propertyData.isNotEmpty) {
     router =
-        await handleProperties(propertyData, router, rootMember, ref, baseUrl);
+        await handleProperties(propertyData, router, rootMember, ref, baseUrl, middlewares);
   }
   return router;
 }
@@ -52,7 +53,7 @@ Future<Cascade> mountURLMethod(MethodMirror rootMember, InstanceMirror ref,
 /// Mounts the router [adapter] inside the shelf [Cascade] [router]
 ///
 /// The [adapter] must have the [RestAPI] annotation
-Future<Cascade> mount(dynamic adapter, Cascade router) async {
+Future<Cascade> mount(dynamic adapter, Cascade router, {List<Middleware>? middlewares}) async {
   var ref = reflect(adapter);
   print('-------------------------------------');
   print('mounting ${ref.reflectee}');
@@ -64,7 +65,7 @@ Future<Cascade> mount(dynamic adapter, Cascade router) async {
       : "";
   for (var rootMember in ref.type.instanceMembers.values) {
     if (rootMember.metadata.isNotEmpty) {
-      router = await mountURLMethod(rootMember, ref, router, baseUrl);
+      router = await mountURLMethod(rootMember, ref, router, baseUrl, middlewares);
     }
   }
   print('-------------------------------------');

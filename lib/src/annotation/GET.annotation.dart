@@ -25,22 +25,18 @@ dynamic getHandler(Uri urlUri, Request request, Function getFunction) async {
 /// This is used to annotated a handler method as a Get
 class GET {
   final String url;
-  final List<Middleware>? middlewares;
 
-  const GET({
-    this.url = '',
-    this.middlewares,
-  });
+  const GET({this.url = ''});
 
   Future<Cascade> execute(
-      Function getFunction, Cascade router, String baseUrl) async {
+      Function getFunction, Cascade router, String baseUrl, List<Middleware>? middlewares) async {
     var completeUrl = baseUrl + url;
     Uri urlUri = Uri.parse(completeUrl);
     print('adding get $completeUrl');
-    if (middlewares != null && middlewares!.isNotEmpty) {
+    if (middlewares != null && middlewares.isNotEmpty) {
       var pipeline = Pipeline();
-      for (var element in middlewares!) {
-        pipeline.addMiddleware(element);
+      for (var element in middlewares) {
+        pipeline = pipeline.addMiddleware(element);
       }
       return router.add(pipeline.addHandler((Request request) async {
         try {

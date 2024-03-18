@@ -27,22 +27,18 @@ dynamic patchHandler(
 /// This is used to annotated a handler method as a Patch
 class PATCH {
   final String url;
-  final List<Middleware>? middlewares;
 
-  const PATCH({
-    this.url = '',
-    this.middlewares,
-  });
+  const PATCH({this.url = ''});
 
   Future<Cascade> execute(
-      Function patchFunction, Cascade router, String baseUrl) async {
+      Function patchFunction, Cascade router, String baseUrl, List<Middleware>? middlewares) async {
     var completeUrl = baseUrl + url;
     Uri urlUri = Uri.parse(completeUrl);
     print('adding patch $completeUrl');
-    if (middlewares != null && middlewares!.isNotEmpty) {
+    if (middlewares != null && middlewares.isNotEmpty) {
       var pipeline = Pipeline();
-      for (var element in middlewares!) {
-        pipeline.addMiddleware(element);
+      for (var element in middlewares) {
+        pipeline = pipeline.addMiddleware(element);
       }
       return router.add(pipeline.addHandler((Request request) async {
         try {

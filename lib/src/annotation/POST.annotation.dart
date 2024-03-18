@@ -43,22 +43,18 @@ dynamic postHandler(Uri urlUri, Request request, Function postFunction) async {
 /// This is used to annotated a handler method as a Post
 class POST {
   final String url;
-  final List<Middleware>? middlewares;
 
-  const POST({
-    this.url = '',
-    this.middlewares,
-  });
+  const POST({this.url = ''});
 
   Future<Cascade> execute(
-      Function postFunction, Cascade router, String baseUrl) async {
+      Function postFunction, Cascade router, String baseUrl, List<Middleware>? middlewares) async {
     var completeUrl = baseUrl + url;
     Uri urlUri = Uri.parse(completeUrl);
     print('adding post $completeUrl');
-    if (middlewares != null && middlewares!.isNotEmpty) {
+    if (middlewares != null && middlewares.isNotEmpty) {
       var pipeline = Pipeline();
-      for (var element in middlewares!) {
-        pipeline.addMiddleware(element);
+      for (var element in middlewares) {
+        pipeline = pipeline.addMiddleware(element);
       }
       return router.add(pipeline.addHandler((Request request) async {
         try {

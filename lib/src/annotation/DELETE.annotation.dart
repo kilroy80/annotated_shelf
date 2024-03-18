@@ -26,22 +26,18 @@ dynamic deleteHandler(
 /// This is used to annotated a handler method as a Delete
 class DELETE {
   final String url;
-  final List<Middleware>? middlewares;
 
-  const DELETE({
-    this.url = '',
-    this.middlewares,
-  });
+  const DELETE({this.url = ''});
 
   Future<Cascade> execute(
-      Function deleteFunction, Cascade router, String baseUrl) async {
+      Function deleteFunction, Cascade router, String baseUrl, List<Middleware>? middlewares) async {
     var completeUrl = baseUrl + url;
     Uri urlUri = Uri.parse(completeUrl);
     print('adding delete $completeUrl');
-    if (middlewares != null && middlewares!.isNotEmpty) {
+    if (middlewares != null && middlewares.isNotEmpty) {
       var pipeline = Pipeline();
-      for (var element in middlewares!) {
-        pipeline.addMiddleware(element);
+      for (var element in middlewares) {
+        pipeline = pipeline.addMiddleware(element);
       }
       return router.add(pipeline.addHandler((Request request) async {
         try {
